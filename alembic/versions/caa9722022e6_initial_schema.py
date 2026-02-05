@@ -30,18 +30,16 @@ def upgrade() -> None:
     )
     op.create_table('meal_entry',
     sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('user_id', sa.Integer(), nullable=False),
+    sa.Column('tg_user_id', sa.Integer(), nullable=False),
     sa.Column('text', sa.String(length=300), nullable=False),
-    sa.Column('eaten_at', sa.TIMESTAMP(), nullable=True),
     sa.Column('calories', sa.Integer(), nullable=True),
     sa.Column('protein', sa.Integer(), nullable=True),
     sa.Column('fat', sa.Integer(), nullable=True),
     sa.Column('carbs', sa.Integer(), nullable=True),
     sa.Column('llm_raw', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
     sa.Column('confidence', sa.Float(), nullable=False),
-    sa.ForeignKeyConstraint(['user_id'], ['tg_user.id'], ),
+    sa.ForeignKeyConstraint(['tg_user_id'], ['tg_user.tg_user_id'], ),
     sa.PrimaryKeyConstraint('id'),
-    sa.UniqueConstraint('user_id')
     )
     op.drop_table('user')
     # ### end Alembic commands ###

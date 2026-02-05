@@ -4,9 +4,8 @@ from pydantic import BaseModel
 
 
 class MealEntryCreateData(BaseModel):
-    user_id: int
+    tg_user_id: int
     text: str
-    eaten_at: datetime
     calories: int
     protein: int
     fat: int

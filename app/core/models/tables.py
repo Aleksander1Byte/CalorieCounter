@@ -4,8 +4,8 @@ from sqlalchemy.dialects.postgresql import JSONB
 
 metadata_obj = MetaData()
 
-user = Table(
-    "user",
+tg_user = Table(
+    "tg_user",
     metadata_obj,
     Column("id", Integer, primary_key=True),
     Column("tg_user_id", Integer, unique=True, nullable=False),
@@ -16,7 +16,7 @@ meal_entry = Table(
     "meal_entry",
     metadata_obj,
     Column("id", Integer, primary_key=True),
-    Column("user_id", Integer, ForeignKey("user.id"), unique=True, nullable=False),
+    Column("user_id", Integer, ForeignKey("tg_user.id"), unique=True, nullable=False),
     Column("text", String(300), nullable=False),
     Column("eaten_at", TIMESTAMP),
     Column("calories", Integer),

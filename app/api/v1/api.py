@@ -1,4 +1,5 @@
 from fastapi import APIRouter
+
 from app.api.v1.routers.health import health_router
 from app.api.v1.routers.meals import router as meal_router
 

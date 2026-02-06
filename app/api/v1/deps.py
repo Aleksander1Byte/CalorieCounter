@@ -1,12 +1,12 @@
 from typing import Annotated
 
-from fastapi import Depends, Security, HTTPException
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi import Depends, HTTPException, Security
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
+from app.core.config import SECRET_KEY
 from app.core.db.session import SessionDep
 from app.repositories import MealEntryRepository, UserRepository
 from app.services import MealService
-from app.core.config import SECRET_KEY
 
 
 def auth_header(key: HTTPAuthorizationCredentials = Security(HTTPBearer())):

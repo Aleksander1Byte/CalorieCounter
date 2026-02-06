@@ -1,6 +1,8 @@
-import httpx
-from app.core.config import GEMINI_KEY
 import json
+
+import httpx
+
+from app.core.config import GEMINI_KEY
 
 
 class GeminiClient:

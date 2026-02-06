@@ -1,9 +1,10 @@
 from typing import Annotated
 
 from fastapi import Depends
-from sqlmodel import SQLModel
-from app.core.db.engine import engine, async_session
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlmodel import SQLModel
+
+from app.core.db.engine import async_session, engine
 
 
 async def init_db():

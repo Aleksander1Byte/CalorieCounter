@@ -1,5 +1,6 @@
 from datetime import datetime
 from typing import Any
+
 from pydantic import BaseModel, Field
 
 
@@ -8,11 +9,11 @@ class MealEntryCreateData(BaseModel):
     text: str
     created_at: datetime = Field(default_factory=lambda: datetime.now())
     calories: int
-    protein: int
-    fat: int
-    carbs: int
+    protein: float = Field(ge=0, decimal_places=1)
+    fat: float = Field(ge=0, decimal_places=1)
+    carbs: float = Field(ge=0, decimal_places=1)
     llm_raw: dict[str, Any]
-    confidence: float
+    confidence: int
 
 
 class MealEntry(MealEntryCreateData):

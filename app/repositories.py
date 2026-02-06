@@ -1,14 +1,10 @@
+from sqlalchemy import DATE, cast, delete, func, select
+from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.schemas import (
-    MealEntryCreateData,
-    MealEntry,
-    TgUserRepositoryCreateData,
-    TgUserEntry,
-)
 from app.core.db.tables import meal_entry, tg_user
-from sqlalchemy.dialects.postgresql import insert
-from sqlalchemy import select, cast, func, DATE, delete
+from app.schemas import (MealEntry, MealEntryCreateData, TgUserEntry,
+                         TgUserRepositoryCreateData)
 
 
 class UserRepository:

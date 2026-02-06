@@ -1,5 +1,5 @@
-from sqlalchemy import MetaData
-from sqlalchemy import Table, Column, Integer, TIMESTAMP, ForeignKey, String, Float, Numeric
+from sqlalchemy import (TIMESTAMP, Column, ForeignKey, Integer, MetaData,
+                        Numeric, String, Table)
 from sqlalchemy.dialects.postgresql import JSONB
 
 metadata_obj = MetaData()
@@ -19,7 +19,7 @@ meal_entry = Table(
     Column("tg_user_id", Integer, ForeignKey("tg_user.tg_user_id"), nullable=False),
     Column("text", String(300), nullable=False),
     Column("created_at", TIMESTAMP),
-    Column("calories", Numeric(6, 1)),
+    Column("calories", Integer),
     Column("protein", Numeric(6, 1)),
     Column("fat", Numeric(6, 1)),
     Column("carbs", Numeric(6, 1)),

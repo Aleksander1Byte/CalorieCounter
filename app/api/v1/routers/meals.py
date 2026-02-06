@@ -1,10 +1,11 @@
 from typing import Annotated
 
-from fastapi import APIRouter, HTTPException, Body, Depends, Header
+from fastapi import APIRouter, Body, Depends, Header, HTTPException
 
-from ..deps import MealServiceDep, auth_header
 from app.exceptions import EmptyMealTextException
 from app.schemas import MealEntry
+
+from ..deps import MealServiceDep, auth_header
 
 router = APIRouter(prefix="/meal", tags=["meals"], dependencies=[Depends(auth_header)])
 

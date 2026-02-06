@@ -1,15 +1,13 @@
+import asyncio
 from datetime import datetime
 
-from .llm.GeminiClient import GeminiClient
-from app.schemas import (
-    TgUserEntry,
-    MealEntry,
-    TgUserRepositoryCreateData,
-    MealEntryCreateData,
-)
+from app.exceptions import (EmptyMealTextException, NotAFoodException,
+                            StrangeRequestException)
 from app.repositories import MealEntryRepository, UserRepository
-from app.exceptions import EmptyMealTextException, NotAFoodException, StrangeRequestException
-import asyncio
+from app.schemas import (MealEntry, MealEntryCreateData, TgUserEntry,
+                         TgUserRepositoryCreateData)
+
+from .llm.GeminiClient import GeminiClient
 
 llm_client = GeminiClient()
 
@@ -56,9 +54,9 @@ class MealService:
             text=text,
             created_at=datetime.now(),
             calories=data.get("calories_kcal"),
-            protein=int(data.get("protein_g")),
-            fat=int(data.get("fat_g")),
-            carbs=int(data.get("carbs_g")),
+            protein=data.get("protein_g"),
+            fat=data.get("fat_g"),
+            carbs=data.get("carbs_g"),
             llm_raw=data,
             confidence=data.get("confidence"),
         )

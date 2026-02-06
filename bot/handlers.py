@@ -7,9 +7,11 @@ from aiogram.filters import Command, CommandStart
 from aiogram.types import Message
 
 from config import SECRET_KEY, backend_url
+import re
 
 router = Router()
 client = httpx.AsyncClient(timeout=30.0)
+NO_EMOJIS_RE = re.compile(r"[^a-zA-Zа-яА-ЯЁё0-9 ,.=+%;:<>\n]")
 
 
 async def check_connection():
@@ -61,7 +63,7 @@ async def delete_last_handler(message: Message) -> None:
                 result.json(),
                 initial_message=msg,
             ),
-            parse_mode="markdown",
+            parse_mode="html",
         )
     elif result.status_code == 404:
         await message.answer("У вас не было подсчётов")
@@ -86,13 +88,13 @@ async def get_last_handler(message: Message) -> None:
         text = result.json()["text"]
         if text:
             msg = (
-                f"По моим _примерным_ расчётам в "
+                f"По моим <i>примерным</i> расчётам в "
                 f"последнем блюде что вы съели "
                 f"({text[:35]}{'...' if len(text) > 35 else ''}) было:"
             )
         else:
             msg = (
-                "По моим _примерным_ расчётам в "
+                "По моим <i>примерным</i> расчётам в "
                 "последнем блюде что вы съели было:"
             )
 
@@ -100,8 +102,9 @@ async def get_last_handler(message: Message) -> None:
             form_answer(
                 result.json(),
                 initial_message=msg,
+                include_micro=True,
             ),
-            parse_mode="markdown",
+            parse_mode="html",
         )
     elif result.status_code == 404:
         await message.answer("У вас не было подсчётов")
@@ -109,17 +112,29 @@ async def get_last_handler(message: Message) -> None:
 
 def form_answer(
     json_data: json,
-    initial_message: str = "По моим _примерным_ расчётам вы съели:",
+    initial_message: str = "По моим <i>примерным</i> расчётам вы съели:",
     include_micro=False,
 ) -> str:
     ans = (
-        initial_message + "\n" + f"*{json_data['calories']}* калорий 🍴\n"
-        f"*{json_data['protein']}* белков 💪\n"
-        f"*{json_data['fat']}* жиров 🧈\n"
-        f"*{json_data['carbs']}* углеводов 🍚\n"
+        initial_message + "\n" + f"<b>{json_data['calories']}</b> калорий 🍴\n"
+        f"<b>{json_data['protein']}</b> белков 💪\n"
+        f"<b>{json_data['fat']}</b> жиров 🧈\n"
+        f"<b>{json_data['carbs']}</b> углеводов 🍚\n"
     )
     if include_micro:
-        pass  # TODO
+        if not json_data.get("llm_raw").get("micro"):
+            logging.warning(
+                "При включеном include_micro не оказалось"
+                " данных о витаминах и минералах"
+            )
+            return ans
+        ans += "\nПомимо этого там содержалось:\n"
+        for item in json_data["llm_raw"]["micro"]:
+            ans += f"{item['name']} {item['percent_dv']}%\n"
+        ans += (
+            "\n<i>(Проценты рассчитаны от дневной нормы "
+            "среднестатистического 25-летнего мужчины)</i>"
+        )
     return ans
 
 
@@ -143,10 +158,10 @@ async def today_handler(message: Message) -> None:
         await message.answer(
             form_answer(
                 result.json(),
-                initial_message="По моим _примерным_ "
+                initial_message="По моим <i>примерным</i> "
                 "расчётам за сегодня вы съели:",
             ),
-            parse_mode="markdown",
+            parse_mode="html",
         )
     elif result.status_code == 404:
         await message.answer("За сегодня у вас не было подсчётов")
@@ -154,7 +169,8 @@ async def today_handler(message: Message) -> None:
 
 @router.message()
 async def message_handler(message: Message) -> None:
-    if not message.text:
+    text = "".join(NO_EMOJIS_RE.split(message.text))
+    if not text:
         await message.answer("Я понимаю только текстовое описание блюда")
         return
     headers = {
@@ -162,14 +178,13 @@ async def message_handler(message: Message) -> None:
         "Authorization": f"Bearer {SECRET_KEY}",
         "Content-Type": "application/json",
     }
-    logging.info(
-        "tg_user_id=%s text=%s", message.from_user.id, message.text[:200]
-    )
+
+    logging.info("tg_user_id=%s text=%s", message.from_user.id, text[:200])
     try:
         result = await client.post(
             backend_url + "/meal/",
             headers=headers,
-            json={"text": message.text},
+            json={"text": text},
         )
     except httpx.ConnectError:
         await message.answer("Что-то пошло не так")
@@ -179,7 +194,7 @@ async def message_handler(message: Message) -> None:
     if result.status_code == 200:
         await message.answer(
             form_answer(result.json(), include_micro=True),
-            parse_mode="markdown",
+            parse_mode="html",
         )
 
     elif result.status_code == 400:

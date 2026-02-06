@@ -3,15 +3,21 @@ from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.db.tables import meal_entry, tg_user
-from app.schemas import (MealEntry, MealEntryCreateData, TgUserEntry,
-                         TgUserRepositoryCreateData)
+from app.schemas import (
+    MealEntry,
+    MealEntryCreateData,
+    TgUserEntry,
+    TgUserRepositoryCreateData,
+)
 
 
 class UserRepository:
     def __init__(self, session: AsyncSession):
         self.session = session
 
-    async def get_or_create(self, data: TgUserRepositoryCreateData) -> TgUserEntry:
+    async def get_or_create(
+        self, data: TgUserRepositoryCreateData
+    ) -> TgUserEntry:
         stmt = insert(tg_user).values(
             tg_user_id=data.tg_user_id, created_at=data.created_at
         )

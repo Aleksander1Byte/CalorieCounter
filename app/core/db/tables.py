@@ -1,5 +1,13 @@
-from sqlalchemy import (TIMESTAMP, Column, ForeignKey, Integer, MetaData,
-                        Numeric, String, Table)
+from sqlalchemy import (
+    TIMESTAMP,
+    Column,
+    ForeignKey,
+    Integer,
+    MetaData,
+    Numeric,
+    String,
+    Table,
+)
 from sqlalchemy.dialects.postgresql import JSONB
 
 metadata_obj = MetaData()
@@ -16,7 +24,9 @@ meal_entry = Table(
     "meal_entry",
     metadata_obj,
     Column("id", Integer, primary_key=True),
-    Column("tg_user_id", Integer, ForeignKey("tg_user.tg_user_id"), nullable=False),
+    Column(
+        "tg_user_id", Integer, ForeignKey("tg_user.tg_user_id"), nullable=False
+    ),
     Column("text", String(300), nullable=False),
     Column("created_at", TIMESTAMP),
     Column("calories", Integer),

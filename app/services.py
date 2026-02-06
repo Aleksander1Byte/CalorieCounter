@@ -1,11 +1,18 @@
 import asyncio
 from datetime import datetime
 
-from app.exceptions import (EmptyMealTextException, NotAFoodException,
-                            StrangeRequestException)
+from app.exceptions import (
+    EmptyMealTextException,
+    NotAFoodException,
+    StrangeRequestException,
+)
 from app.repositories import MealEntryRepository, UserRepository
-from app.schemas import (MealEntry, MealEntryCreateData, TgUserEntry,
-                         TgUserRepositoryCreateData)
+from app.schemas import (
+    MealEntry,
+    MealEntryCreateData,
+    TgUserEntry,
+    TgUserRepositoryCreateData,
+)
 
 from .llm.GeminiClient import GeminiClient
 
@@ -39,14 +46,13 @@ class MealService:
             raise EmptyMealTextException
 
         _, data = await asyncio.gather(
-            self._get_user(tg_user_id),
-            llm_client.process(text)
+            self._get_user(tg_user_id), llm_client.process(text)
         )
 
         if data.get("calories_kcal") == -1:
             raise NotAFoodException
 
-        if data.get("confidence") < 60:
+        if data.get("confidence") < 75:
             raise StrangeRequestException
 
         data = MealEntryCreateData(

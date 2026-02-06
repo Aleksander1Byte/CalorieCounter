@@ -9,9 +9,9 @@ class MealEntryCreateData(BaseModel):
     text: str
     created_at: datetime = Field(default_factory=lambda: datetime.now())
     calories: int
-    protein: float = Field(ge=0, decimal_places=1)
-    fat: float = Field(ge=0, decimal_places=1)
-    carbs: float = Field(ge=0, decimal_places=1)
+    protein: float = Field(ge=0)
+    fat: float = Field(ge=0)
+    carbs: float = Field(ge=0)
     llm_raw: dict[str, Any]
     confidence: int
 

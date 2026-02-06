@@ -7,9 +7,8 @@ from app.schemas import (
     TgUserEntry,
 )
 from app.core.db.tables import meal_entry, tg_user
-from datetime import datetime
 from sqlalchemy.dialects.postgresql import insert
-from sqlalchemy import select, cast, func, DATE
+from sqlalchemy import select, cast, func, DATE, delete
 
 
 class UserRepository:
@@ -34,6 +33,57 @@ class UserRepository:
 class MealEntryRepository:
     def __init__(self, session: AsyncSession):
         self.session = session
+
+    async def get_last_meal(self, tg_user_id: int):
+        stmt = (
+            select(meal_entry)
+            .where(meal_entry.c.tg_user_id == tg_user_id)
+            .order_by(meal_entry.c.id.desc())
+            .limit(1)
+        )
+        res = await self.session.execute(stmt)
+        return res.first()
+
+    async def delete_last_meal(self, tg_user_id: int):
+        subq = (
+            select(meal_entry.c.id)
+            .where(meal_entry.c.tg_user_id == tg_user_id)
+            .order_by(meal_entry.c.id.desc())
+            .limit(1)
+            .scalar_subquery()
+        )
+        stmt = (
+            delete(meal_entry)
+            .where(meal_entry.c.id == subq)
+            .returning(
+                meal_entry.c.id,
+                meal_entry.c.tg_user_id,
+                meal_entry.c.text,
+                meal_entry.c.created_at,
+                meal_entry.c.calories,
+                meal_entry.c.protein,
+                meal_entry.c.fat,
+                meal_entry.c.carbs,
+                meal_entry.c.llm_raw,
+                meal_entry.c.confidence,
+            )
+        )
+        res = await self.session.execute(stmt)
+        row = res.one_or_none()
+        if row is None:
+            return None
+        return MealEntry(
+            id=row.id,
+            tg_user_id=row.tg_user_id,
+            text=row.text,
+            created_at=row.created_at,
+            calories=row.calories,
+            protein=row.protein,
+            fat=row.fat,
+            carbs=row.carbs,
+            llm_raw=row.llm_raw,
+            confidence=row.confidence,
+        )
 
     async def get_today_meals(self, tg_user_id: int):
         stmt = select(meal_entry).where(
@@ -75,9 +125,3 @@ class MealEntryRepository:
             llm_raw=row.llm_raw,
             confidence=row.confidence,
         )
-
-    async def list_for_day(self, tg_user_id: int, day: datetime):
-        pass
-
-    async def delete_last(self, tg_user_id):
-        pass

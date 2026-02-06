@@ -19,8 +19,16 @@ class MealService:
         self.user_repository = user_repository
         self.meal_entry_repository = meal_entry_repository
 
+    async def get_last_meal(self, tg_user_id) -> MealEntry:
+        return await self.meal_entry_repository.get_last_meal(tg_user_id)
+
+    async def delete_last_meal(self, tg_user_id) -> MealEntry:
+        res = await self.meal_entry_repository.delete_last_meal(tg_user_id)
+        if res:
+            await self.meal_entry_repository.session.commit()
+        return res
+
     async def today_meals(self, tg_user_id) -> list[MealEntry]:
-        await self._get_user(tg_user_id)
         return await self.meal_entry_repository.get_today_meals(tg_user_id)
 
     async def log_meal(self, tg_user_id, text) -> MealEntry:

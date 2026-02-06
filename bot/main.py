@@ -7,7 +7,7 @@ from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 
 from config import TG_BOT_KEY
-from handlers import router, check_connection
+from handlers import check_connection, router
 
 TOKEN = TG_BOT_KEY
 

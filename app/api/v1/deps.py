@@ -3,8 +3,8 @@ from typing import Annotated
 from fastapi import Depends
 
 from app.core.db.session import SessionDep
-from app.core.models.repositories import MealEntryRepository, UserRepository
-from app.core.models.services import MealService
+from app.repositories import MealEntryRepository, UserRepository
+from app.services import MealService
 
 
 def get_meal_service(session: SessionDep) -> MealService:

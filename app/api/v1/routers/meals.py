@@ -2,12 +2,17 @@ from fastapi import APIRouter, HTTPException
 
 from ..deps import MealServiceDep
 from app.core.exceptions import EmptyMealTextError
-from app.core.models.pydantic import MealEntry
+from app.schemas import MealEntry
 
 router = APIRouter(prefix="/meal", tags=["meals"])
 
 
-@router.get("/meal/{tg_id}/{text}")
+@router.get("/{tg_id}/today")
+async def today(meal_service: MealServiceDep, tg_id: int) -> list[MealEntry]:
+    return await meal_service.today_meals(tg_id)
+
+
+@router.get("/{tg_id}/{text}")
 async def meal_entry(meal_service: MealServiceDep, tg_id: int, text: str) -> MealEntry:
     try:
         return await meal_service.log_meal(tg_id, text)

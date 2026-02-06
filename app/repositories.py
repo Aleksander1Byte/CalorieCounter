@@ -1,14 +1,15 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from .pydantic import (
+from app.schemas import (
     MealEntryCreateData,
     MealEntry,
     TgUserRepositoryCreateData,
     TgUserEntry,
 )
-from .tables import meal_entry, tg_user
+from app.core.db.tables import meal_entry, tg_user
 from datetime import datetime
 from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy import select, cast, func, DATE
 
 
 class UserRepository:
@@ -33,6 +34,14 @@ class UserRepository:
 class MealEntryRepository:
     def __init__(self, session: AsyncSession):
         self.session = session
+
+    async def get_today_meals(self, tg_user_id: int):
+        stmt = select(meal_entry).where(
+            meal_entry.c.tg_user_id == tg_user_id,
+            cast(meal_entry.c.created_at, DATE) == func.current_date(),
+        )
+        res = await self.session.execute(stmt)
+        return res.all()
 
     async def add_entry(self, data: MealEntryCreateData) -> MealEntry:
         payload = data.model_dump()

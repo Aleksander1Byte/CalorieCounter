@@ -6,7 +6,7 @@ from sqlalchemy import pool
 import os
 from dotenv import load_dotenv
 
-from app.core.models.tables import metadata_obj
+from app.core.db.tables import metadata_obj
 
 from alembic import context
 

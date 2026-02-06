@@ -1,13 +1,13 @@
 from datetime import datetime
 
-from .pydantic import (
+from app.schemas import (
     TgUserEntry,
     MealEntry,
     TgUserRepositoryCreateData,
     MealEntryCreateData,
 )
-from .repositories import MealEntryRepository, UserRepository
-from ..exceptions import EmptyMealTextError
+from app.repositories import MealEntryRepository, UserRepository
+from app.core.exceptions import EmptyMealTextError
 
 
 class MealService:
@@ -18,6 +18,10 @@ class MealService:
     ):
         self.user_repository = user_repository
         self.meal_entry_repository = meal_entry_repository
+
+    async def today_meals(self, tg_user_id) -> list[MealEntry]:
+        await self._get_user(tg_user_id)
+        return await self.meal_entry_repository.get_today_meals(tg_user_id)
 
     async def log_meal(self, tg_user_id, text) -> MealEntry:
         # TODO: add LLM

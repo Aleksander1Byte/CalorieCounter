@@ -1,15 +1,17 @@
 import json
 import logging
+import re
 
 import httpx
 from aiogram import Router, html
 from aiogram.filters import Command, CommandStart
 from aiogram.types import Message
 
-from config import SECRET_KEY, backend_url
-import re
+from config import backend_url
+from middleware import HeaderMiddleware
 
 router = Router()
+router.message.middleware(HeaderMiddleware())
 client = httpx.AsyncClient(timeout=30.0)
 NO_EMOJIS_RE = re.compile(r"[^a-zA-Zа-яА-ЯЁё0-9 ,.=+%;:<>\n]")
 
@@ -34,12 +36,7 @@ async def command_start_handler(message: Message) -> None:
 
 
 @router.message(Command("delete_last"))
-async def delete_last_handler(message: Message) -> None:
-    headers = {
-        "x-tg-user-id": str(message.from_user.id),
-        "Authorization": f"Bearer {SECRET_KEY}",
-        "Content-Type": "application/json",
-    }
+async def delete_last_handler(message: Message, headers: dict) -> None:
     logging.info("tg_user_id=%s method=DELETE LAST", message.from_user.id)
     try:
         result = await client.delete(
@@ -70,12 +67,7 @@ async def delete_last_handler(message: Message) -> None:
 
 
 @router.message(Command("last"))
-async def get_last_handler(message: Message) -> None:
-    headers = {
-        "x-tg-user-id": str(message.from_user.id),
-        "Authorization": f"Bearer {SECRET_KEY}",
-        "Content-Type": "application/json",
-    }
+async def get_last_handler(message: Message, headers: dict) -> None:
     logging.info("tg_user_id=%s method=GET LAST", message.from_user.id)
     try:
         result = await client.get(backend_url + "/meal/last", headers=headers)
@@ -139,12 +131,7 @@ def form_answer(
 
 
 @router.message(Command("today"))
-async def today_handler(message: Message) -> None:
-    headers = {
-        "x-tg-user-id": str(message.from_user.id),
-        "Authorization": f"Bearer {SECRET_KEY}",
-        "Content-Type": "application/json",
-    }
+async def today_handler(message: Message, headers: dict) -> None:
     logging.info("tg_user_id=%s method=TODAY", message.from_user.id)
 
     try:
@@ -168,16 +155,11 @@ async def today_handler(message: Message) -> None:
 
 
 @router.message()
-async def message_handler(message: Message) -> None:
+async def message_handler(message: Message, headers: dict) -> None:
     text = "".join(NO_EMOJIS_RE.split(message.text))
     if not text:
         await message.answer("Я понимаю только текстовое описание блюда")
         return
-    headers = {
-        "x-tg-user-id": str(message.from_user.id),
-        "Authorization": f"Bearer {SECRET_KEY}",
-        "Content-Type": "application/json",
-    }
 
     logging.info("tg_user_id=%s text=%s", message.from_user.id, text[:200])
     try:

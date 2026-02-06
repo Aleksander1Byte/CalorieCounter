@@ -1,4 +1,4 @@
-import datetime
+from datetime import datetime
 
 from .pydantic import (
     TgUserEntry,
@@ -30,6 +30,7 @@ class MealService:
         data = MealEntryCreateData(
             tg_user_id=tg_user_id,
             text=text,
+            created_at=datetime.now(),
             calories=100,
             protein=12,
             fat=5,
@@ -43,7 +44,7 @@ class MealService:
 
     async def _get_user(self, tg_user_id: int) -> TgUserEntry:
         data = TgUserRepositoryCreateData(
-            tg_user_id=tg_user_id, created_at=datetime.datetime.now()
+            tg_user_id=tg_user_id, created_at=datetime.now()
         )
         res = await self.user_repository.get_or_create(data)
         await self.user_repository.session.commit()

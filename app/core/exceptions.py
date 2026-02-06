@@ -1,2 +1,0 @@
-class EmptyMealTextError(Exception):
-    pass

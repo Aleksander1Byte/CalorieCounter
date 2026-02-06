@@ -8,3 +8,4 @@ if not DATABASE_URL:
     raise RuntimeError("DATABASE_URL is not set")
 
 SECRET_KEY = os.getenv("SECRET_KEY")
+GEMINI_KEY = os.getenv("GEMINI_API_KEY")

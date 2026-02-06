@@ -1,5 +1,6 @@
 from datetime import datetime
 
+from .llm.GeminiClient import GeminiClient
 from app.schemas import (
     TgUserEntry,
     MealEntry,
@@ -7,7 +8,10 @@ from app.schemas import (
     MealEntryCreateData,
 )
 from app.repositories import MealEntryRepository, UserRepository
-from app.core.exceptions import EmptyMealTextError
+from app.exceptions import EmptyMealTextException, NotAFoodException, StrangeRequestException
+import asyncio
+
+llm_client = GeminiClient()
 
 
 class MealService:
@@ -32,23 +36,31 @@ class MealService:
         return await self.meal_entry_repository.get_today_meals(tg_user_id)
 
     async def log_meal(self, tg_user_id, text) -> MealEntry:
-        # TODO: add LLM
         text = text.strip()
         if not text:
-            raise EmptyMealTextError
+            raise EmptyMealTextException
 
-        await self._get_user(tg_user_id)
+        _, data = await asyncio.gather(
+            self._get_user(tg_user_id),
+            llm_client.process(text)
+        )
+
+        if data.get("calories_kcal") == -1:
+            raise NotAFoodException
+
+        if data.get("confidence") < 60:
+            raise StrangeRequestException
 
         data = MealEntryCreateData(
             tg_user_id=tg_user_id,
             text=text,
             created_at=datetime.now(),
-            calories=100,
-            protein=12,
-            fat=5,
-            carbs=20,
-            llm_raw={"test": "yes"},
-            confidence=1.0,
+            calories=data.get("calories_kcal"),
+            protein=int(data.get("protein_g")),
+            fat=int(data.get("fat_g")),
+            carbs=int(data.get("carbs_g")),
+            llm_raw=data,
+            confidence=data.get("confidence"),
         )
         res = await self.meal_entry_repository.add_entry(data)
         await self.meal_entry_repository.session.commit()

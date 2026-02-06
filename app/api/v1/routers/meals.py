@@ -3,7 +3,7 @@ from typing import Annotated
 from fastapi import APIRouter, HTTPException, Body, Depends, Header
 
 from ..deps import MealServiceDep, auth_header
-from app.core.exceptions import EmptyMealTextError
+from app.exceptions import EmptyMealTextException
 from app.schemas import MealEntry
 
 router = APIRouter(prefix="/meal", tags=["meals"], dependencies=[Depends(auth_header)])
@@ -47,5 +47,5 @@ async def meal_entry(
 ) -> MealEntry:
     try:
         return await meal_service.log_meal(x_tg_user_id, text)
-    except EmptyMealTextError:
+    except EmptyMealTextException:
         raise HTTPException(status_code=400, detail="The text field is empty")

@@ -41,11 +41,30 @@ async def delete_last_meal(
     return entry
 
 
-@router.get("/today")
+@router.get(
+    "/today",
+    responses={
+        200: {
+            "content": {
+                "application/json": {
+                    "example": {
+                        "calories": 100,
+                        "protein": 25,
+                        "fat": 10,
+                        "carbs": 30,
+                    }
+                }
+            },
+        }
+    },
+)
 async def today(
     meal_service: MealServiceDep,
     x_tg_user_id: Annotated[int, Header()],
-) -> list[MealEntry]:
+) -> dict:
+    res = await meal_service.today_meals(x_tg_user_id)
+    if res is None:
+        raise HTTPException(status_code=404, detail="No meals")
     return await meal_service.today_meals(x_tg_user_id)
 
 
@@ -58,12 +77,12 @@ async def meal_entry(
     try:
         return await meal_service.log_meal(x_tg_user_id, text)
     except EmptyMealTextException:
-        raise HTTPException(status_code=400, detail="Пустой запрос")
+        raise HTTPException(status_code=400, detail="Empty request")
     except NotAFoodException:
-        raise HTTPException(status_code=400, detail="Не еда")
+        raise HTTPException(status_code=400, detail="Not a food")
     except StrangeRequestException:
         raise HTTPException(
-            status_code=400, detail="Попробуйте описать по другому"
+            status_code=400, detail="Try to describe it differently"
         )
     except HTTPStatusError:
-        raise HTTPException(status_code=429, detail="Попробуйте позже")
+        raise HTTPException(status_code=429, detail="Try again later")

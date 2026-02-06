@@ -37,8 +37,14 @@ class MealService:
             await self.meal_entry_repository.session.commit()
         return res
 
-    async def today_meals(self, tg_user_id) -> list[MealEntry]:
-        return await self.meal_entry_repository.get_today_meals(tg_user_id)
+    async def today_meals(self, tg_user_id) -> dict:
+        res = await self.meal_entry_repository.get_today_meals(tg_user_id)
+        return {
+            "calories": res[0],
+            "protein": res[1],
+            "fat": res[2],
+            "carbs": res[3],
+        }
 
     async def log_meal(self, tg_user_id, text) -> MealEntry:
         text = text.strip()

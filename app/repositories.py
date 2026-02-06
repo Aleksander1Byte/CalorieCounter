@@ -88,12 +88,17 @@ class MealEntryRepository:
         )
 
     async def get_today_meals(self, tg_user_id: int):
-        stmt = select(meal_entry).where(
+        stmt = select(
+            func.sum(meal_entry.c.calories),
+            func.sum(meal_entry.c.protein),
+            func.sum(meal_entry.c.fat),
+            func.sum(meal_entry.c.carbs),
+        ).where(
             meal_entry.c.tg_user_id == tg_user_id,
             cast(meal_entry.c.created_at, DATE) == func.current_date(),
         )
         res = await self.session.execute(stmt)
-        return res.all()
+        return res.all()[0]
 
     async def add_entry(self, data: MealEntryCreateData) -> MealEntry:
         payload = data.model_dump()

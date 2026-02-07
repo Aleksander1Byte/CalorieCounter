@@ -15,7 +15,6 @@ REACTION_EMOJIS = [
     for i in [
         "❤",
         "👍",
-        "👎",
         "🔥",
         "🥰",
         "👏",

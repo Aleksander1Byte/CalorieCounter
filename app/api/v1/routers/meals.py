@@ -1,6 +1,14 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Body, Depends, Header, HTTPException
+from fastapi import (
+    APIRouter,
+    Depends,
+    Header,
+    HTTPException,
+    UploadFile,
+    File,
+    Form,
+)
 from httpx import HTTPStatusError
 
 from app.exceptions import (
@@ -72,9 +80,15 @@ async def today(
 async def meal_entry(
     meal_service: MealServiceDep,
     x_tg_user_id: Annotated[int, Header()],
-    text: Annotated[str, Body(embed=True)],
+    text: Annotated[str, Form(...)],
+    file: Annotated[UploadFile | None, File] = File(None),
 ) -> MealEntry:
     try:
+        if file:
+            image_content = await file.read()
+            return await meal_service.log_meal(
+                x_tg_user_id, text, image_content, file.content_type
+            )
         return await meal_service.log_meal(x_tg_user_id, text)
     except EmptyMealTextException:
         raise HTTPException(status_code=400, detail="Empty request")

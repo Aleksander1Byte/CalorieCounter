@@ -1,4 +1,3 @@
-import asyncio
 from datetime import datetime
 
 from app.exceptions import (
@@ -46,14 +45,19 @@ class MealService:
             "carbs": res[3],
         }
 
-    async def log_meal(self, tg_user_id, text) -> MealEntry:
+    async def log_meal(
+        self,
+        tg_user_id: int,
+        text: str,
+        image_content: bytes = None,
+        content_type: str = None,
+    ) -> MealEntry:
         text = text.strip()
-        if not text:
+        if not text and image_content is None:
             raise EmptyMealTextException
 
-        _, data = await asyncio.gather(
-            self._get_user(tg_user_id), llm_client.process(text)
-        )
+        await self._get_user(tg_user_id)
+        data = await llm_client.process(text, image_content, content_type)
 
         if data.get("calories_kcal") == -1:
             raise NotAFoodException

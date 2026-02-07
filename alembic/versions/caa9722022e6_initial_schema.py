@@ -1,16 +1,17 @@
 """Initial schema
 
 Revision ID: caa9722022e6
-Revises: 
+Revises:
 Create Date: 2026-02-05 16:20:05.146978
 
 """
 
 from typing import Sequence, Union
 
-from alembic import op
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
+
+from alembic import op
 
 # revision identifiers, used by Alembic.
 revision: str = "caa9722022e6"
@@ -39,7 +40,9 @@ def upgrade() -> None:
         sa.Column("protein", sa.Integer(), nullable=True),
         sa.Column("fat", sa.Integer(), nullable=True),
         sa.Column("carbs", sa.Integer(), nullable=True),
-        sa.Column("llm_raw", postgresql.JSONB(astext_type=sa.Text()), nullable=True),
+        sa.Column(
+            "llm_raw", postgresql.JSONB(astext_type=sa.Text()), nullable=True
+        ),
         sa.Column("confidence", sa.Float(), nullable=False),
         sa.ForeignKeyConstraint(
             ["tg_user_id"],
@@ -57,9 +60,14 @@ def downgrade() -> None:
     op.create_table(
         "user",
         sa.Column("id", sa.INTEGER(), autoincrement=True, nullable=False),
-        sa.Column("tg_user_id", sa.INTEGER(), autoincrement=False, nullable=False),
         sa.Column(
-            "created_at", postgresql.TIMESTAMP(), autoincrement=False, nullable=True
+            "tg_user_id", sa.INTEGER(), autoincrement=False, nullable=False
+        ),
+        sa.Column(
+            "created_at",
+            postgresql.TIMESTAMP(),
+            autoincrement=False,
+            nullable=True,
         ),
         sa.PrimaryKeyConstraint("id", name=op.f("user_pkey")),
         sa.UniqueConstraint(

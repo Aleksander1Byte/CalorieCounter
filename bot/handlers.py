@@ -1,9 +1,11 @@
 import json
 import logging
 import re
+import io
+from typing import Tuple
 
 import httpx
-from aiogram import Router, html
+from aiogram import Router, html, F, Bot
 from aiogram.filters import Command, CommandStart
 from aiogram.types import Message
 
@@ -14,7 +16,7 @@ from random import choice
 router = Router()
 router.message.middleware(HeaderMiddleware())
 client = httpx.AsyncClient(timeout=30.0)
-NO_EMOJIS_RE = re.compile(r"[^a-zA-Zа-яА-ЯЁё0-9 \n]")
+NO_EMOJIS_RE = re.compile(r"[^a-zA-Zа-яА-ЯЁё0-9 %\n]")
 
 
 async def check_connection():
@@ -158,24 +160,58 @@ async def today_handler(message: Message, headers: dict) -> None:
         await message.answer("За сегодня у вас не было подсчётов")
 
 
-@router.message()
-async def message_handler(message: Message, headers: dict) -> None:
+async def _download_tg_file(
+    bot: Bot,
+    file_id: str,
+) -> Tuple[io.BytesIO, str]:
+    file = await bot.get_file(file_id)
+    buf = io.BytesIO()
+    await bot.download_file(file.file_path, destination=buf)
+    buf.seek(0)
+    return buf, file.file_path
 
+
+@router.message(F.photo)
+async def photo_handler(message: Message, headers: dict) -> None:
+    if message.photo:
+        file_id = message.photo[-1].file_id
+    else:
+        file_id = message.document.file_id
+
+    buf, tg_file_path = await _download_tg_file(message.bot, file_id)
+    temp_msg = await message.answer("Подумаю 🤔")
+    result = await client.post(
+        backend_url + "/meal/",
+        headers=headers,
+        files={
+            "file": ("image.jpg", buf, "image/jpeg"),
+        },
+        data={"text": message.caption or "Проанализируй это изображение"},
+    )
+    try:
+        await temp_msg.delete()
+    except Exception:
+        logging.warning("Не удалось удалить временное сообщение")
+    await manage_response(message, result)
+
+
+@router.message(F.text)
+async def message_handler(message: Message, headers: dict) -> None:
     text = message.text
     if not text or text is None:
-        await message.answer("Я понимаю только текстовое описание блюда")
+        await message.answer(
+            "Я понимаю только текстовое описание блюда или картинки"
+        )
         return
     text = "".join(NO_EMOJIS_RE.split(message.text))
 
     logging.info("tg_user_id=%s text=%s", message.from_user.id, text[:200])
     temp_msg = await message.answer("Подумаю 🤔")
-    await message.react([choice(REACTION_EMOJIS)])
-
     try:
         result = await client.post(
             backend_url + "/meal/",
             headers=headers,
-            json={"text": text},
+            data={"text": text},
         )
     except httpx.ConnectError:
         await message.answer("Что-то пошло не так")
@@ -187,12 +223,16 @@ async def message_handler(message: Message, headers: dict) -> None:
     except Exception:
         logging.warning("Не удалось удалить временное сообщение")
 
+    await manage_response(message, result)
+
+
+async def manage_response(message, result):
     if result.status_code == 200:
         await message.answer(
             form_answer(result.json(), include_micro=True),
             parse_mode="html",
         ),
-
+        await message.react([choice(REACTION_EMOJIS)])
     elif result.status_code == 400:
         await message.answer(
             "С вашим запросом что-то не так, попробуйте переформулировать"

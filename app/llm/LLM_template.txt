@@ -27,6 +27,7 @@
 10) USER ONLY RUSSIAN LANGUAGE (РУССКИЙ ЯЗЫК) for mineral or vitamin names.
 12) Fill in your confidence in answer as given in TEMPLATE -> integer (0-100)
 13) Food portion sizes MUST follow common sense and not be TOO big.
+14) If given IMAGE or text DOES NOT contain food -> return "-1" in every field.
 ## OUTPUT TEMPLATE (STRICT)
 {
   "calories_kcal": number,

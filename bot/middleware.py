@@ -16,7 +16,6 @@ class HeaderMiddleware(BaseMiddleware):
         self.headers = {
             "x-tg-user-id": str(event.from_user.id),
             "Authorization": f"Bearer {SECRET_KEY}",
-            "Content-Type": "application/json",
         }
         data["headers"] = self.headers
         return await handler(event, data)

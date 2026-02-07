@@ -37,6 +37,7 @@ services:
   nginx:
     image: nginx:1.27-alpine
     container_name: calorie_nginx
+    profiles: ["edge"]
     depends_on:
       - api
     ports:

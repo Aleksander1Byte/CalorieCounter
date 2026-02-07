@@ -57,7 +57,10 @@ class MealService:
             raise EmptyMealTextException
 
         await self._get_user(tg_user_id)
-        data = await llm_client.process(text, image_content, content_type)
+        try:
+            data = await llm_client.process(text, image_content, content_type)
+        except StrangeRequestException:
+            raise
 
         if data.get("calories_kcal") == -1:
             raise NotAFoodException

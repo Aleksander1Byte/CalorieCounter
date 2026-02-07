@@ -34,7 +34,8 @@ async def check_connection():
 async def command_start_handler(message: Message) -> None:
     await message.answer(
         f"Здравствуй, {html.bold(message.from_user.full_name)}!"
-        f"\nОтправь мне описание блюда и я посчитаю его КБЖУ, а также "
+        f"\nОтправь мне описание блюда или его изображение"
+        f" и я посчитаю его КБЖУ, а также "
         f"покажу 5 витаминов и минералов которых в нём больше всего :)"
         f"\n(Также можете попробовать /today /last /delete_last)"
     )
@@ -204,6 +205,9 @@ async def message_handler(message: Message, headers: dict) -> None:
         )
         return
     text = "".join(NO_EMOJIS_RE.split(message.text))
+    if not text:
+        await message.answer("Используйте только текст")
+        return
 
     logging.info("tg_user_id=%s text=%s", message.from_user.id, text[:200])
     temp_msg = await message.answer("Подумаю 🤔")
@@ -231,7 +235,7 @@ async def manage_response(message, result):
         await message.answer(
             form_answer(result.json(), include_micro=True),
             parse_mode="html",
-        ),
+        )
         await message.react([choice(REACTION_EMOJIS)])
     elif result.status_code == 400:
         await message.answer(

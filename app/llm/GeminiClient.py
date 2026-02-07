@@ -3,6 +3,7 @@ import json
 import httpx
 
 from app.core.config import GEMMA_KEY
+from app.exceptions import StrangeRequestException
 
 
 class GeminiClient:
@@ -27,7 +28,10 @@ class GeminiClient:
 
     @staticmethod
     def _parse(model_output: str):
-        return json.loads(model_output[7:-4])
+        try:
+            return json.loads(model_output[7:-4])
+        except json.JSONDecodeError:
+            raise StrangeRequestException
 
     async def _resumable_upload(self, image_bytes):
         response = await self.client.post(
@@ -77,6 +81,5 @@ class GeminiClient:
         r = await self.client.post(
             self.url, headers=self.headers, json=payload
         )
-        print(r.text)
         r.raise_for_status()
         return r.json()

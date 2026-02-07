@@ -1,0 +1,3 @@
+aiogram==3.24.0
+dotenv
+httpx

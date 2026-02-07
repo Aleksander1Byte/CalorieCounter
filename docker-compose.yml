@@ -1,0 +1,53 @@
+services:
+  db:
+    image: postgres:16
+    container_name: calorie_db
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks: [appnet]
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    container_name: calorie_api
+    env_file: .env
+    depends_on: [db]
+    networks: [appnet]
+    expose:
+      - "8000"
+    restart: unless-stopped
+
+  bot:
+    build:
+      context: .
+      dockerfile: Dockerfile.bot
+    container_name: calorie_bot
+    env_file: .env
+    depends_on:
+      api:
+        condition: service_started
+    networks: [appnet]
+    restart: unless-stopped
+
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: calorie_nginx
+    depends_on:
+      - api
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+    networks: [appnet]
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+
+networks:
+  appnet:

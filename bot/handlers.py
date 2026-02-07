@@ -113,6 +113,8 @@ def form_answer(
     initial_message: str = "По моим <i>примерным</i> расчётам вы съели:",
     include_micro=False,
 ) -> str:
+    if json_data["calories"] is None:
+        return "Тут ничего нет :)"
     ans = (
         initial_message + "\n" + f"<b>{json_data['calories']}</b> калорий 🍴\n"
         f"<b>{json_data['protein']}</b> белков 💪\n"
@@ -193,7 +195,14 @@ async def photo_handler(message: Message, headers: dict) -> None:
         await temp_msg.delete()
     except Exception:
         logging.warning("Не удалось удалить временное сообщение")
-    await manage_response(message, result)
+
+    text = result.json()["text"]
+    await manage_response(
+        message,
+        result,
+        initial_message="Похоже, что это:"
+        "\n<b>" + text + "</b>\n\nВ этом содержится <i>примерно</i>:",
+    )
 
 
 @router.message(F.text)
@@ -230,10 +239,10 @@ async def message_handler(message: Message, headers: dict) -> None:
     await manage_response(message, result)
 
 
-async def manage_response(message, result):
+async def manage_response(message, result, **kwargs):
     if result.status_code == 200:
         await message.answer(
-            form_answer(result.json(), include_micro=True),
+            form_answer(result.json(), include_micro=True, **kwargs),
             parse_mode="html",
         )
         await message.react([choice(REACTION_EMOJIS)])

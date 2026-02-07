@@ -67,6 +67,8 @@ class MealService:
 
         if data.get("confidence") < 75:
             raise StrangeRequestException
+        if data.get("image_desc") != -1:
+            text = data.get("image_desc")
 
         data = MealEntryCreateData(
             tg_user_id=tg_user_id,

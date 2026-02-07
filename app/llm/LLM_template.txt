@@ -28,6 +28,10 @@
 12) Fill in your confidence in answer as given in TEMPLATE -> integer (0-100)
 13) Food portion sizes MUST follow common sense and not be TOO big.
 14) If given IMAGE or text DOES NOT contain food -> return "-1" in every field.
+15) If input contains an IMAGE:
+    - fill field "image_desc" with a short, factual description of visible food only (max 20 words) IN RUSSIAN LANGUAGE.
+    - do NOT describe people, environment, or non-food objects.
+    Otherwise, set "image_desc" = -1.
 ## OUTPUT TEMPLATE (STRICT)
 {
   "calories_kcal": number,
@@ -35,6 +39,7 @@
   "fat_g": number,
   "carbs_g": number,
   "confidence": number,
+  "image_desc": string,
   "micro": [
     {
       "name": string,

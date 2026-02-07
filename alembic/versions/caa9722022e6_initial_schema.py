@@ -50,7 +50,6 @@ def upgrade() -> None:
         ),
         sa.PrimaryKeyConstraint("id"),
     )
-    op.drop_table("user")
     # ### end Alembic commands ###
 
 

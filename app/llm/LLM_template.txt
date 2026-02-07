@@ -21,11 +21,12 @@
 7) All numeric values must be realistic and rounded:
    - calories -> integer
    - grams -> one decimal
-   - mineral or vitamins percentages -> integer (0–100)
+   - mineral or vitamins percentages -> integer
 8) Assume all products are raw unless cooking method is explicitly stated.
 9) If weights or volumes are given - use them. Otherwise assume standard portion sizes.
 10) USER ONLY RUSSIAN LANGUAGE (РУССКИЙ ЯЗЫК) for mineral or vitamin names.
 12) Fill in your confidence in answer as given in TEMPLATE -> integer (0-100)
+13) Food portion sizes MUST follow common sense and not be TOO big.
 ## OUTPUT TEMPLATE (STRICT)
 {
   "calories_kcal": number,

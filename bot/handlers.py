@@ -7,17 +7,20 @@ from aiogram import Router, html
 from aiogram.filters import Command, CommandStart
 from aiogram.types import Message
 
-from config import backend_url
+from config import backend_url, REACTION_EMOJIS
 from middleware import HeaderMiddleware
+from random import choice
 
 router = Router()
 router.message.middleware(HeaderMiddleware())
 client = httpx.AsyncClient(timeout=30.0)
-NO_EMOJIS_RE = re.compile(r"[^a-zA-Zа-яА-ЯЁё0-9 ,.=+%;:<>\n]")
+NO_EMOJIS_RE = re.compile(r"[^a-zA-Zа-яА-ЯЁё0-9 \n]")
 
 
 async def check_connection():
-    res = await client.get(backend_url + "/health")
+    res = await client.get(
+        backend_url + "/health",
+    )
     if res.status_code == 200:
         logging.info("Установлено соединение с backend")
     else:
@@ -125,6 +128,7 @@ def form_answer(
             ans += f"{item['name']} {item['percent_dv']}%\n"
         ans += (
             "\n<i>(Проценты рассчитаны от дневной нормы "
+            "витаминов/минералов "
             "среднестатистического 25-летнего мужчины)</i>"
         )
     return ans
@@ -156,12 +160,17 @@ async def today_handler(message: Message, headers: dict) -> None:
 
 @router.message()
 async def message_handler(message: Message, headers: dict) -> None:
-    text = "".join(NO_EMOJIS_RE.split(message.text))
-    if not text:
+
+    text = message.text
+    if not text or text is None:
         await message.answer("Я понимаю только текстовое описание блюда")
         return
+    text = "".join(NO_EMOJIS_RE.split(message.text))
 
     logging.info("tg_user_id=%s text=%s", message.from_user.id, text[:200])
+    temp_msg = await message.answer("Подумаю 🤔")
+    await message.react([choice(REACTION_EMOJIS)])
+
     try:
         result = await client.post(
             backend_url + "/meal/",
@@ -173,11 +182,16 @@ async def message_handler(message: Message, headers: dict) -> None:
         logging.critical("Не произошло подключение к backend")
         return
 
+    try:
+        await temp_msg.delete()
+    except Exception:
+        logging.warning("Не удалось удалить временное сообщение")
+
     if result.status_code == 200:
         await message.answer(
             form_answer(result.json(), include_micro=True),
             parse_mode="html",
-        )
+        ),
 
     elif result.status_code == 400:
         await message.answer(

@@ -38,7 +38,7 @@ Calorie Counter - сервис для измерения КБЖУ и микро�
 - SQLAlchemy Core
 
 **Frontend:**
-- Telegram Bot (asyncio)
+- Telegram Bot (aiogram)
 - httpx
 - logging
 

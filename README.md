@@ -36,6 +36,7 @@ Calorie Counter - сервис для измерения КБЖУ и микро�
 - PostgreSQL
 - AsyncIO
 - SQLAlchemy Core
+
 **Frontend:**
 - Telegram Bot (asyncio)
 - httpx

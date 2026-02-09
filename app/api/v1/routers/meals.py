@@ -100,3 +100,7 @@ async def meal_entry(
         )
     except HTTPStatusError:
         raise HTTPException(status_code=429, detail="Try again later")
+    except Exception:
+        raise HTTPException(
+            status_code=400, detail="Try to describe it more simply"
+        )

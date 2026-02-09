@@ -16,7 +16,7 @@ from random import choice
 router = Router()
 router.message.middleware(HeaderMiddleware())
 client = httpx.AsyncClient(timeout=30.0)
-NO_EMOJIS_RE = re.compile(r"[^a-zA-Zа-яА-ЯЁё0-9 %\n]")
+NO_EMOJIS_RE = re.compile(r"[^a-zA-Zа-яА-ЯЁё0-9 %()\n]")
 
 
 async def check_connection():
@@ -111,10 +111,20 @@ async def get_last_handler(message: Message, headers: dict) -> None:
 def form_answer(
     json_data: json,
     initial_message: str = "По моим <i>примерным</i> расчётам вы съели:",
-    include_micro=False,
+    include_micro: bool = False,
+    image: bool = False,
 ) -> str:
     if json_data["calories"] is None:
         return "Тут ничего нет :)"
+
+    if image:
+        initial_message = (
+            "Похоже, что это:"
+            "\n<b>"
+            + json_data["text"]
+            + "</b>\n\nВ этом содержится <i>примерно</i>:"
+        )
+
     ans = (
         initial_message + "\n" + f"<b>{json_data['calories']}</b> калорий 🍴\n"
         f"<b>{json_data['protein']}</b> белков 💪\n"
@@ -195,14 +205,7 @@ async def photo_handler(message: Message, headers: dict) -> None:
         await temp_msg.delete()
     except Exception:
         logging.warning("Не удалось удалить временное сообщение")
-
-    text = result.json()["text"]
-    await manage_response(
-        message,
-        result,
-        initial_message="Похоже, что это:"
-        "\n<b>" + text + "</b>\n\nВ этом содержится <i>примерно</i>:",
-    )
+    await manage_response(message, result, image=True)
 
 
 @router.message(F.text)
@@ -218,7 +221,7 @@ async def message_handler(message: Message, headers: dict) -> None:
         await message.answer("Используйте только текст")
         return
 
-    logging.info("tg_user_id=%s text=%s", message.from_user.id, text[:200])
+    logging.info("tg_user_id=%s text=%s", message.from_user.id, text)
     temp_msg = await message.answer("Подумаю 🤔")
     try:
         result = await client.post(
@@ -255,4 +258,4 @@ async def manage_response(message, result, **kwargs):
         await message.answer("Попробуйте позже")
     else:
         logging.error(f"Ошибка {result.status_code}; Запрос {result.request}")
-        await message.answer(f"Что-то очень пошло не так {result.status_code}")
+        await message.answer("Что-то пошло не так")

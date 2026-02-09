@@ -3,6 +3,7 @@ from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.db.tables import meal_entry, tg_user
+from app.exceptions import StrangeRequestException
 from app.schemas import (
     MealEntry,
     MealEntryCreateData,
@@ -118,7 +119,12 @@ class MealEntryRepository:
                 meal_entry.c.confidence,
             )
         )
-        res = await self.session.execute(stmt)
+
+        try:
+            res = await self.session.execute(stmt)
+        except Exception:
+            raise StrangeRequestException
+
         row = res.one()
         return MealEntry(
             id=row.id,

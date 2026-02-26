@@ -10,3 +10,4 @@ if not DATABASE_URL:
 
 SECRET_KEY = os.getenv("SECRET_KEY")
 GEMMA_KEY = os.getenv("GEMMA_API_KEY")
+DEEPSEEK_KEY = os.getenv("DEEPSEEK_KEY")

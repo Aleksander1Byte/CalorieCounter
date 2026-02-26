@@ -5,6 +5,7 @@ import sys
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
+from aiogram.exceptions import TelegramNetworkError
 
 from config import TG_BOT_KEY
 from handlers import check_connection, router
@@ -21,7 +22,10 @@ async def main() -> None:
     dp.include_router(router)
 
     await check_connection()
-    await bot.delete_webhook(drop_pending_updates=True)
+    try:
+        await bot.delete_webhook(drop_pending_updates=True, request_timeout=30)
+    except TelegramNetworkError as e:
+        print(f"delete_webhook failed: {e}")
     await dp.start_polling(bot)
 
 

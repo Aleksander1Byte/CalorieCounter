@@ -15,4 +15,4 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_KEY }}
           port: ${{ secrets.SSH_PORT }}
-          script: cd /opt/caloriecounter && docker compose up -d --build
+          script: cd /opt/caloriecounter && git fetch --all --prune && git reset --hard origin/main && docker compose up -d --build

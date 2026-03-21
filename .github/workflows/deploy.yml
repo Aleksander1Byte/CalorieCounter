@@ -15,4 +15,6 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_KEY }}
           port: ${{ secrets.SSH_PORT }}
-          script: /opt/caloriecounter/scripts/deploy.sh
+          script: |
+            cd /opt/caloriecounter
+            docker-compose up -d --build

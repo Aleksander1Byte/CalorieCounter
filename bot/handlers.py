@@ -19,7 +19,7 @@ from random import choice
 
 router = Router()
 router.message.middleware(HeaderMiddleware())
-client = httpx.AsyncClient(timeout=30.0)
+client = httpx.AsyncClient(timeout=300.0)
 NO_EMOJIS_RE = re.compile(r"[^a-zA-Zа-яА-ЯЁё0-9 %()\n]")
 _whisper_model = None
 

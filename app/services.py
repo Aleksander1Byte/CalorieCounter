@@ -58,7 +58,9 @@ class MealService:
 
         await self._get_user(tg_user_id)
         try:
-            data = await llm_client.process(text, image_content, content_type)
+            data = await llm_client.process(
+                text, image_content, content_type, tg_user_id=tg_user_id
+            )
         except StrangeRequestException:
             raise
 

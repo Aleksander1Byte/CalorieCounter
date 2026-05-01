@@ -3,9 +3,12 @@ import logging
 
 import httpx
 
-from app.core.config import GEMMA_KEY, DEEPSEEK_KEY
+from app.core.config import GEMMA_KEY, DEEPSEEK_KEY, ADMIN_ID_TG
 from app.exceptions import StrangeRequestException
 from openai import AsyncOpenAI
+
+ADMIN_TG_USER_ID = ADMIN_ID_TG
+ADMIN_DEEPSEEK_MODEL = "deepseek-v4-pro"
 
 
 class GeminiClient:
@@ -20,47 +23,67 @@ class GeminiClient:
             f"v1beta/models/gemma-3-27b-it:generateContent?key={self.key}"
         )
 
-        self.client = httpx.AsyncClient(timeout=30.0)
+        self.client = httpx.AsyncClient(timeout=90.0)
         self.client_ds = AsyncOpenAI(
-            timeout=30,
+            timeout=90,
             api_key=DEEPSEEK_KEY,
             base_url="https://api.deepseek.com",
         )
         with open("app/llm/LLM_template.txt", encoding="utf-8", mode="r") as f:
             self.prompt = f.read()
 
-    async def fallback_to_deepseek(self, text: str, image: bytes):
+    async def fallback_to_deepseek(
+        self,
+        text: str,
+        image: bytes,
+        model: str = "deepseek-chat",
+    ):
         """Emergency method for fallbacks
-        For now it's primary method since it's a lot more precise"""
-        logging.warning(f"Fallback to deepseek with {text=}")
+        We do not want to process images with DeepSeek
+        We use this ONLY if Gemma is 429, ~and ONLY for 30 requests~"""
+        logging.warning(f"Called fallback to deepseek with {text=}")
         # if image and self.counter > 30:
         #     raise HTTPStatusError
 
-        response = await self.client_ds.chat.completions.create(
-            model="deepseek-chat",
-            messages=[
+        kwargs = {
+            "model": model,
+            "messages": [
                 {"role": "system", "content": self.prompt},
                 {"role": "user", "content": text},
             ],
-            stream=False,
-        )
+            "stream": False,
+        }
+
+        response = await self.client_ds.chat.completions.create(**kwargs)
         return response.choices[0].message.content
 
-    async def process(self, text: str, image: bytes, content_type: str):
+    async def process(
+        self,
+        text: str,
+        image: bytes,
+        content_type: str,
+        tg_user_id: int | None = None,
+    ):
         try:
-            if image:
+            if tg_user_id == ADMIN_TG_USER_ID:
+                # Admin-only override: use DeepSeek Pro in non-thinking mode.
+                data = GeminiClient._parse_ds(
+                    await self.fallback_to_deepseek(
+                        text=text,
+                        image=image,
+                        model=ADMIN_DEEPSEEK_MODEL,
+                    )
+                )
+                logging.info(f"Called admin DeepSeek with {text=}")
+            else:
                 response_json = await self.request(text, image, content_type)
                 data = response_json["candidates"][0]["content"]["parts"][0][
                     "text"
                 ]
-                logging.info(f"Used Gemma for input {text=} {image=}")
-            else:
-                data = GeminiClient._parse_ds(
-                    await self.fallback_to_deepseek(text=text, image=image)
-                )
-                logging.info(f"Used DeepSeek for input {text=}")
+                logging.info(f"Called Gemma with {text=}")
         except Exception:
-            logging.warning(f"Used DeepSeek for input {text}")
+            if tg_user_id == ADMIN_TG_USER_ID:
+                raise
             data = GeminiClient._parse_ds(
                 await self.fallback_to_deepseek(text=text, image=image)
             )

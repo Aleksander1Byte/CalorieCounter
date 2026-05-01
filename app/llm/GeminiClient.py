@@ -62,15 +62,26 @@ class GeminiClient:
 
     @staticmethod
     def _parse_ds(model_output: str):
-        try:
-            return json.loads(model_output)
-        except Exception:
-            raise HTTPStatusError
+        return GeminiClient._parse(model_output)
 
     @staticmethod
     def _parse(model_output: str):
+        if isinstance(model_output, dict):
+            return model_output
+        if not isinstance(model_output, str):
+            raise StrangeRequestException
+
+        payload = model_output.strip()
+        if payload.startswith("```"):
+            lines = payload.splitlines()
+            if lines and lines[0].strip().lower() in ("```json", "```"):
+                lines = lines[1:]
+            if lines and lines[-1].strip() == "```":
+                lines = lines[:-1]
+            payload = "\n".join(lines).strip()
+
         try:
-            return json.loads(model_output[7:-4])
+            return json.loads(payload)
         except json.JSONDecodeError:
             raise StrangeRequestException
 

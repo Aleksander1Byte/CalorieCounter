@@ -121,7 +121,7 @@ def form_answer(
         initial_message = (
             "Похоже, что это:"
             "\n<b>"
-            + json_data["text"]
+            + json_data["text"].capitalize()
             + "</b>\n\nВ этом содержится <i>примерно</i>:"
         )
 
@@ -131,15 +131,30 @@ def form_answer(
         f"<b>{json_data['fat']}</b> жиров 🧈\n"
         f"<b>{json_data['carbs']}</b> углеводов 🍚\n"
     )
+
+    llm_raw = json_data.get("llm_raw") or {}
+    if not isinstance(llm_raw, dict):
+        llm_raw = {}
+
+    estimated_weight_g = llm_raw.get("estimated_weight_g")
+    if (
+            isinstance(estimated_weight_g, (int, float))
+            and estimated_weight_g > 0
+    ):
+        ans += (
+            "Примерный вес порции: "
+            f"<b>{round(estimated_weight_g)} г</b> ⚖️\n"
+        )
+
     if include_micro:
-        if not json_data.get("llm_raw").get("micro"):
+        if not llm_raw.get("micro"):
             logging.warning(
                 "При включеном include_micro не оказалось"
                 " данных о витаминах и минералах"
             )
             return ans
         ans += "\nПомимо этого там содержалось:\n"
-        for item in json_data["llm_raw"]["micro"]:
+        for item in llm_raw["micro"]:
             ans += f"{item['name']} {item['percent_dv']}%\n"
         ans += (
             "\n<i>(Проценты рассчитаны от дневной нормы "

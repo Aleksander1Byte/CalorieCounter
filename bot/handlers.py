@@ -1,15 +1,19 @@
+import asyncio
 import json
 import logging
+import os
 import re
 import io
+import tempfile
 from typing import Tuple
 
 import httpx
+from faster_whisper import WhisperModel
 from aiogram import Router, html, F, Bot
 from aiogram.filters import Command, CommandStart
 from aiogram.types import Message
 
-from config import backend_url, REACTION_EMOJIS
+from config import backend_url, REACTION_EMOJIS, WHISPER_MODEL_SIZE
 from middleware import HeaderMiddleware
 from random import choice
 
@@ -17,6 +21,7 @@ router = Router()
 router.message.middleware(HeaderMiddleware())
 client = httpx.AsyncClient(timeout=30.0)
 NO_EMOJIS_RE = re.compile(r"[^a-zA-Zа-яА-ЯЁё0-9 %()\n]")
+_whisper_model = None
 
 
 async def check_connection():
@@ -197,6 +202,130 @@ async def _download_tg_file(
     await bot.download_file(file.file_path, destination=buf)
     buf.seek(0)
     return buf, file.file_path
+
+
+@router.message(F.voice)
+async def voice_handler(message: Message, headers: dict) -> None:
+    voice = message.voice
+    logging.info(
+        "tg_user_id=%s method=VOICE duration=%s",
+        message.from_user.id,
+        voice.duration if voice else None,
+    )
+
+    if not voice:
+        await message.answer(
+            "С вашим запросом что-то не так, попробуйте переформулировать"
+        )
+        return
+
+    if voice.duration and voice.duration > 120:
+        logging.info(
+            "tg_user_id=%s voice rejected by duration=%s",
+            message.from_user.id,
+            voice.duration,
+        )
+        await message.answer(
+            "Голосовые длиннее 2 минут я не принимаю. "
+            "Попробуйте отправить более короткую запись."
+        )
+        return
+
+    temp_msg = None
+    temp_path = None
+    try:
+        buf, tg_file_path = await _download_tg_file(
+            message.bot,
+            voice.file_id,
+        )
+        _, suffix = os.path.splitext(tg_file_path or "")
+        if not suffix:
+            suffix = ".oga"
+        with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
+            tmp.write(buf.read())
+            temp_path = tmp.name
+
+        temp_msg = await message.answer("Подумаю 🤔")
+
+        def transcribe_voice():
+            global _whisper_model
+            if _whisper_model is None:
+                _whisper_model = WhisperModel(
+                    WHISPER_MODEL_SIZE,
+                    device="cpu",
+                    compute_type="int8",
+                )
+            segments, _ = _whisper_model.transcribe(temp_path)
+            return " ".join(
+                segment.text.strip() for segment in segments if segment.text
+            ).strip()
+
+        transcription = await asyncio.to_thread(transcribe_voice)
+    except Exception:
+        logging.exception(
+            "tg_user_id=%s voice transcription failed",
+            message.from_user.id,
+        )
+        await message.answer(
+            "С вашим запросом что-то не так, попробуйте переформулировать"
+        )
+        if temp_msg:
+            try:
+                await temp_msg.delete()
+            except Exception:
+                logging.warning("Не удалось удалить временное сообщение")
+        return
+    finally:
+        if temp_path:
+            try:
+                os.remove(temp_path)
+            except OSError:
+                logging.warning("Не удалось удалить временный voice-файл")
+
+    text = "".join(NO_EMOJIS_RE.split(transcription))
+    if not text:
+        logging.warning(
+            "tg_user_id=%s voice transcription is empty",
+            message.from_user.id,
+        )
+        await message.answer(
+            "С вашим запросом что-то не так, попробуйте переформулировать"
+        )
+        if temp_msg:
+            try:
+                await temp_msg.delete()
+            except Exception:
+                logging.warning("Не удалось удалить временное сообщение")
+        return
+
+    logging.info(
+        "tg_user_id=%s voice transcription succeeded length=%s",
+        message.from_user.id,
+        len(text),
+    )
+
+    transcription_message = f'Я распознал:\n\n"{text}"'
+    for start in range(0, len(transcription_message), 3900):
+        await message.answer(transcription_message[start:start + 3900])
+
+    try:
+        result = await client.post(
+            backend_url + "/meal/",
+            headers=headers,
+            data={"text": text},
+        )
+    except httpx.ConnectError:
+        await message.answer("Что-то пошло не так")
+        logging.critical("Не произошло подключение к backend")
+        return
+    finally:
+        if temp_msg:
+            try:
+                await temp_msg.delete()
+            except Exception:
+                logging.warning("Не удалось удалить временное сообщение")
+
+    await manage_response(message, result)
 
 
 @router.message(F.photo)

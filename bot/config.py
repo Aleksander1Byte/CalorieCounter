@@ -9,6 +9,7 @@ TG_BOT_KEY = os.getenv("TG_BOT_KEY")
 SECRET_KEY = os.getenv("SECRET_KEY")
 BACKEND_URL = os.getenv("BACKEND_URL")
 BACKEND_PORT = os.getenv("BACKEND_PORT")
+WHISPER_MODEL_SIZE = os.getenv("WHISPER_MODEL_SIZE", "tiny")
 backend_url = f"http://{BACKEND_URL}:{BACKEND_PORT}/v1"
 REACTION_EMOJIS = [
     ReactionTypeEmoji(emoji=i)

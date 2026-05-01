@@ -2,7 +2,6 @@ import json
 import logging
 
 import httpx
-from httpx import HTTPStatusError
 
 from app.core.config import GEMMA_KEY, DEEPSEEK_KEY
 from app.exceptions import StrangeRequestException
@@ -43,7 +42,7 @@ class GeminiClient:
                 {"role": "system", "content": self.prompt},
                 {"role": "user", "content": text},
             ],
-            stream=False
+            stream=False,
         )
         return response.choices[0].message.content
 

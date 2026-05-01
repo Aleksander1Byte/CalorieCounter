@@ -142,10 +142,7 @@ def form_answer(
         llm_raw = {}
 
     estimated_weight_g = llm_raw.get("estimated_weight_g")
-    if (
-            isinstance(estimated_weight_g, (int, float))
-            and estimated_weight_g > 0
-    ):
+    if isinstance(estimated_weight_g, (int, float)) and estimated_weight_g > 0:
         ans += (
             "Примерный вес порции: "
             f"<b>{round(estimated_weight_g)} г</b> ⚖️\n"
@@ -306,7 +303,7 @@ async def voice_handler(message: Message, headers: dict) -> None:
 
     transcription_message = f'Я распознал:\n\n"{text}"'
     for start in range(0, len(transcription_message), 3900):
-        await message.answer(transcription_message[start:start + 3900])
+        await message.answer(transcription_message[start: start + 3900])
 
     try:
         result = await client.post(

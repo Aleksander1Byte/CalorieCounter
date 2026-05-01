@@ -32,7 +32,7 @@ class GeminiClient:
     async def fallback_to_deepseek(self, text: str, image: bytes):
         """Emergency method for fallbacks
         For now it's primary method since it's a lot more precise"""
-        logging.warning("Fallback to deepseek with text=", text)
+        logging.warning(f"Fallback to deepseek with {text=}")
         # if image and self.counter > 30:
         #     raise HTTPStatusError
 

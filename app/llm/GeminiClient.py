@@ -32,11 +32,10 @@ class GeminiClient:
 
     async def fallback_to_deepseek(self, text: str, image: bytes):
         """Emergency method for fallbacks
-        We do not want to process images with DeepSeek
-        We use this ONLY if Gemma is 429, and ONLY for 30 requests"""
+        For now it's primary method since it's a lot more precise"""
         logging.warning("Fallback to deepseek with text=", text)
-        if image and self.counter > 30:
-            raise HTTPStatusError
+        # if image and self.counter > 30:
+        #     raise HTTPStatusError
 
         response = await self.client_ds.chat.completions.create(
             model="deepseek-chat",
@@ -50,11 +49,19 @@ class GeminiClient:
 
     async def process(self, text: str, image: bytes, content_type: str):
         try:
-            response_json = await self.request(text, image, content_type)
-            data = response_json["candidates"][0]["content"]["parts"][0][
-                "text"
-            ]
+            if image:
+                response_json = await self.request(text, image, content_type)
+                data = response_json["candidates"][0]["content"]["parts"][0][
+                    "text"
+                ]
+                logging.info(f"Used Gemma for input {text=} {image=}")
+            else:
+                data = GeminiClient._parse_ds(
+                    await self.fallback_to_deepseek(text=text, image=image)
+                )
+                logging.info(f"Used DeepSeek for input {text=}")
         except Exception:
+            logging.warning(f"Used DeepSeek for input {text}")
             data = GeminiClient._parse_ds(
                 await self.fallback_to_deepseek(text=text, image=image)
             )
